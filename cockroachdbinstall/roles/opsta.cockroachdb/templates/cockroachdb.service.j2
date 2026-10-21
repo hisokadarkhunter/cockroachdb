@@ -1,0 +1,25 @@
+#jinja2: trim_blocks:False
+# {{ ansible_managed }}
+
+# /etc/systemd/system/cockroachdb.service
+#   Stops/starts a cockroach node
+
+[Unit]
+Description=Cockroach Database cluster node
+Requires=network.target
+
+[Service]
+Type=notify
+{% if systemd_restart_on_failure %}
+Restart=on-failure
+RestartSec=10
+{% else %}
+{% endif %}
+ExecStart={{install_location}}/cockroach start --http-port={{http_port}} --port={{cockroach_port}} --advertise-addr={{ansible_fqdn}} --join={{ main_nodes_ips }} --store={{datastore}} --log-dir={{log_dir}} {% if cache is defined %} --cache={{ cache | default(omit)}}{%else%}{%endif%} {% if max_sql_memory is defined %} --max-sql-memory={{ max_sql_memory | default(omit)}}{%else%}{%endif%} {% if locality is defined %}  --locality={{ locality | default(omit)}}{%else%}{%endif%}{% if cluster_mode|lower == 'secure' %} --certs-dir={{certs_dir}}{%else%} --insecure{%endif%}
+ExecStop={{install_location}}/cockroach quit --advertise-addr={{ansible_fqdn}}{% if cluster_mode|lower == 'secure' %} --certs-dir={{certs_dir}}{%else%} --insecure{%endif%}
+#User={{ cockroach_user }}
+User=root
+Group=root
+
+[Install]
+WantedBy=multi-user.target

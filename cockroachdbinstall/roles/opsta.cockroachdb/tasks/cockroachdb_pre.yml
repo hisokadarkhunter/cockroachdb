@@ -1,0 +1,39 @@
+---
+- name: Hosts | populate inventory into hosts file
+  blockinfile:
+    path: /etc/hosts
+    block: |-
+      {% for item in (groups['all'] |default([]))|unique -%} {{ hostvars[item]['access_ip'] | default(hostvars[item]['ip'] | default(hostvars[item]['ansible_default_ipv4']['address'])) }} {{ hostvars[item]['ansible_fqdn'] }}
+      {% endfor %}
+    state: present
+    create: yes
+    backup: yes
+    unsafe_writes: yes
+    marker: "# Ansible inventory hosts {mark}"
+    
+- name: Create Cockroach group
+  group: name="{{ cockroach_group }}" state=present
+
+- name: Create Cockroach user
+  user: name="{{ cockroach_user }}" shell=/bin/bash group="{{ cockroach_group }}" state=present
+
+- name: Create directories
+  file: path={{ item }} state=directory owner={{ cockroach_user }} group={{ cockroach_group }} mode=774
+  with_items:
+       - "{{ install_location_base }}"
+       - "{{ certs_dir }}"
+       - "{{ ca_dir }}"
+       - "{{ log_dir }}"
+       - "{{ datastore_basedir }}"
+       - "{{ install_stage }}"
+       - "{{ datastore }}"
+  tags: hostfs
+
+- name: Create installation directory
+  file: name={{ install_location }} state=directory owner={{ cockroach_user }} group={{ cockroach_group }}
+  tags: directories
+
+- name: set facts
+  set_fact:
+    main_nodes_ips: "{{ groups['all'] | map('extract', hostvars, ['ansible_fqdn']) | join(',') }}"
+- debug: var=main_nodes_ips

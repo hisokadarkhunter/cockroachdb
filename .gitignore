@@ -1,0 +1,4 @@
+# CA private key — never commit. Generate locally before running the playbook:
+#   cockroach cert create-ca --certs-dir=cockroachdbinstall/files --ca-key=cockroachdbinstall/files/ca.key
+# then copy it to cockroachdbinstall/roles/opsta.cockroachdb/files/
+*.key
