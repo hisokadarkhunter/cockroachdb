@@ -1,0 +1,52 @@
+---
+
+# Variable for install cockroachdb
+binary_url: https://binaries.cockroachdb.com
+install_version: 2.1.6
+cockroach_port: 26257
+http_port: 443
+reinstall_cluster: False
+remove_cluster: False
+remove_install_binaries: False
+remove_symlink: False
+configure_host_disks: false
+cockroach_user: cockroach
+cockroach_group: cockroach
+
+datastore_basedir: /var/lib/cockroachdata
+datastore: "{{ datastore_basedir }}"
+install_location_base: /var/lib/cockroach
+install_location: "{{ install_location_base}}/{{ install_version }}"
+install_stage: /tmp/cockroach
+certs_dir: "{{ install_location_base }}/certs"
+ca_dir: "{{ install_location_base }}/ca"
+log_dir: "{{ install_location_base }}/log"
+
+cockroach_binaries:
+          unpacked_version: "cockroach-v{{ install_version }}.linux-amd64"
+          filename: "cockroach-v{{ install_version }}.linux-amd64.tgz"
+download_binaries: true
+
+# Variable for systemd service
+cluster_master: "{{play_hosts[0]}}"
+use_random_master: false
+hostgroup: "{{ group_names[0] }}"
+stop_cluster: False
+check_status: False
+#adminui_port: 8080
+use_systemd: true
+
+cluster_mode: secure
+systemd_config_service: cockroachdb
+systemd_config_path: "/etc/systemd/system/cockroachdb.service"
+systemd_restart_on_failure: True
+
+ca_files:
+     - {name: ca.key, dest: "{{ ca_dir }}/", mode: 600 }
+     - {name: ca.crt, dest: "{{ certs_dir }}/", mode: 644 }
+
+cert_users:
+     - root
+     - "{{ cockroach_user }}"
+
+etchosts_path: "{{ playbook_dir }}/files/etchosts"
